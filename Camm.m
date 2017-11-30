@@ -69,6 +69,8 @@ configurePin(robot,elbowDirPin,'DigitalOutput');
 configurePin(robot,shoulderDirPin,'DigitalOutput');
 configurePin(robot,waistDirPin,'DigitalOutput');
 %------------------------------------------------------------
+
+
 a = imaqhwinfo;
 [camera_name, camera_id, format] = getCameraInfo(a);
 
@@ -91,7 +93,7 @@ frameSize = size(frame);
 
 bwPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
 % Set a loop that stop after 100 frames of aquisition
-while(vid.FramesAcquired<=500)
+while(vid.FramesAcquired<=600)
     
     % Get the snapshot of the current frame
     data = getsnapshot(vid);
@@ -116,10 +118,11 @@ while(vid.FramesAcquired<=500)
     % We get a set of properties for each labeled region.
     stats = regionprops(bw, 'BoundingBox', 'Centroid');
     
-    step(bwPlayer, bw);
+    %step(bwPlayer, bw);
     
     % Display the image
-    imshow(data)
+    subplot(2,2,1); imshow(data)
+    subplot(2,2,2); imshow(bw)
     
     
     hold on
@@ -140,11 +143,16 @@ while(vid.FramesAcquired<=500)
         end
         
         if stats(object).Centroid(2) > 320/2
-            moveDown(robot, shoulderDirPin, shoulderEnable,(stats(object).Centroid(2) - (320/2))/160);
+            %moveElbowUp(robot, elbowDirPin, elbowEnable, ((320/2) - stats(object).Centroid(2))/160);
+            moveElbowDown(robot, elbowDirPin, elbowEnable,(stats(object).Centroid(2) - (320/2))/160);
+            pause(0.05);
         end
         
         if stats(object).Centroid(2) < 320/2
-            moveUp(robot, shoulderDirPin, shoulderEnable, ((320/2) - stats(object).Centroid(2))/160);
+            moveElbowUp(robot, elbowDirPin, elbowEnable, ((320/2) - stats(object).Centroid(2))/160);
+            %moveElbowDown(robot, elbowDirPin, elbowEnable,(stats(object).Centroid(2) - (320/2))/160);
+
+            pause(0.05)
         end
         
         % Create a box with dimensions bb, EdgeColor red(r)
@@ -173,7 +181,7 @@ stop(vid);
 flushdata(vid);
 
 % Clear all variables
-release(bwPlayer);
+%release(bwPlayer);
 clear all
 sprintf('%s','That was all about Image tracking, Guess that was pretty easy :) ')
 
@@ -184,7 +192,7 @@ function moveRight(robot, waistDirPin, waistEnable, error)
         writeDigitalPin(robot, waistDirPin, LOW);
         writeDigitalPin(robot, waistEnable, HIGH);
         
-        pause(error * 0.5);
+        pause(error * 0.2);
         writeDigitalPin(robot, waistEnable, LOW);
 end
 
@@ -194,7 +202,7 @@ function moveLeft(robot, waistDirPin, waistEnable, error)
         writeDigitalPin(robot, waistDirPin, HIGH);
         writeDigitalPin(robot, waistEnable, HIGH);
        
-        pause(error * 0.5);
+        pause(error * 0.2);
         writeDigitalPin(robot, waistEnable, LOW);
 end
 
@@ -203,7 +211,7 @@ function moveUp(robot, shoulderDirPin, shoulderEnable, error)
         display(down);
         writeDigitalPin(robot, shoulderDirPin,HIGH);
         writeDigitalPin(robot, shoulderEnable,HIGH);
-        pause(error * 0.5);
+        pause(error * 0.2);
         writeDigitalPin(robot, shoulderEnable, LOW);
         
 end
@@ -213,7 +221,28 @@ function moveDown(robot, shoulderDirPin, shoulderEnable, error)
         display(up);
         writeDigitalPin(robot, shoulderDirPin,LOW);
         writeDigitalPin(robot, shoulderEnable,HIGH);
-        pause(error * 0.5);
+        pause(error * 0.2);
         writeDigitalPin(robot, shoulderEnable, LOW);
         
 end
+
+function moveElbowUp(robot, elbowDirPin, elbowEnable, error)
+        global HIGH LOW down up
+        display(up);
+        writeDigitalPin(robot, elbowDirPin,HIGH);
+        writeDigitalPin(robot, elbowEnable,HIGH);
+        pause(error * 0.2);
+        writeDigitalPin(robot, elbowEnable, LOW);
+        
+end
+ 
+function moveElbowDown(robot, elbowDirPin, elbowEnable, error)
+        global HIGH LOW down up
+        display(down);
+        writeDigitalPin(robot, elbowDirPin,LOW);
+        writeDigitalPin(robot, elbowEnable,HIGH);
+        pause(error * 0.2);
+        writeDigitalPin(robot, elbowEnable, LOW);
+        
+end
+
